@@ -1,3 +1,4 @@
+import yaml
 import argparse
 import numpy as np
 from scipy.optimize import minimize
@@ -275,39 +276,80 @@ def powerIntercept(trials, params):
     return times
 
 
+# ----------------------------------------
+
+# Default Command Line Arguments --stay 0.5 0.5 0.5 --params 10.0 5.0 1.0 -0.1 0.1 --sampling_interval 1
+# --n_iteration 100 --tolerance 0.01 --max_iter 1000000 --optimizer BFGS --filepath data/simulationTest3phase.mat
+
 # Parse Command Line Arguments
 parser = argparse.ArgumentParser()
 
-# Add arguments for stay and params arrays
-parser.add_argument('--stay', nargs='+', type=float, help='Array for stay')
-parser.add_argument('--params', nargs='+', type=float, help='Array for params')
-parser.add_argument('--filepath', type=str, help='File path')
-parser.add_argument('--sampling_interval', type=int, help='Sampling interval')
-parser.add_argument('--n_iteration', type=int, default=100, help='Number of iterations')
-parser.add_argument('--tolerance', type=float, default=0.01, help='Tolerance value')
-parser.add_argument('--debug', action='store_true', help='Enable debug mode')
-parser.add_argument('--max_iter', type=int, default=100000, help='Maximum number of iterations')
-parser.add_argument('--optimizer', type=str, default='BFGS', help='Optimizer name')
+# Add the --config argument to specify the YAML config file
+parser.add_argument('--config', type=str, help='Path to YAML config file')
 
+# Parse the command-line arguments
 args = parser.parse_args()
 
+# If --config argument is provided, load the data from the YAML file
+if args.config:
+    # Load the YAML config file
+    with open(args.config, 'r') as file:
+        config = yaml.safe_load(file)
+
+    # Access the configuration values
+    stay = config['stay']
+    params = config['params']
+    filepath = config['filepath']
+    sampling_interval = config['sampling_interval']
+    n_iteration = config.get('n_iteration', 100)
+    tolerance = config.get('tolerance', 0.01)
+    debug = config.get('debug', False)
+    max_iter = config.get('max_iter', 100000)
+    optimizer = config.get('optimizer', 'BFGS')
+
+# If --config argument is not provided, use command-line arguments
+else:
+    # Add the command-line arguments
+    parser.add_argument('--stay', nargs='+', type=float, help='Array for stay')
+    parser.add_argument('--params', nargs='+', type=float, help='Array for params')
+    parser.add_argument('--filepath', type=str, help='File path')
+    parser.add_argument('--sampling_interval', type=int, help='Sampling interval')
+    parser.add_argument('--n_iteration', type=int, default=100, help='Number of iterations')
+    parser.add_argument('--tolerance', type=float, default=0.01, help='Tolerance value')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    parser.add_argument('--max_iter', type=int, default=100000, help='Maximum number of iterations')
+    parser.add_argument('--optimizer', type=str, default='BFGS', help='Optimizer name')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Access the argument values
+    stay = args.stay
+    params = args.params
+    filepath = args.filepath
+    sampling_interval = args.sampling_interval
+    n_iteration = args.n_iteration
+    tolerance = args.tolerance
+    debug = args.debug
+    max_iter = args.max_iter
+    optimizer = args.optimizer
+
 # Check the condition
-stay_size = len(args.stay) if args.stay else 0
-params_size = len(args.params) if args.params else 0
+stay_size = len(stay)
+params_size = len(params)
 if params_size != stay_size + 2:
     print('Error: "params" array size should be "stay" array size + 2')
 
-dataset_path = args.filepath
-
+dataset_path = filepath
 mat_data = loadmat(dataset_path)
 times = mat_data.get("simRTs", mat_data.get("RTs"))
 # params = mat_data["paramI"]
 # stay = mat_data["stayI"]
 
 # Testing Parameters
-stay = np.array([args.stay])
-params = np.array([args.params])
-times = times[np.arange(0, times.shape[0], args.sampling_interval)]
+stay = np.array([stay])
+params = np.array([params])
+times = times[np.arange(0, times.shape[0], sampling_interval)]
 
 stay_init, params_init = stay, params
 lkh = None
@@ -315,11 +357,11 @@ occupancy = None
 
 print(f"Optimizer Start:\n")
 lkhFIN, stayFIN, paramsFIN, occupancyFIN = hmmPower(times, params, stay,
-                                                    n_iteration=args.n_iteration,
-                                                    tolerance=args.tolerance,
-                                                    debug=args.debug,
-                                                    max_iter=args.max_iter,
-                                                    optimizer=args.optimizer
+                                                    n_iteration=n_iteration,
+                                                    tolerance=tolerance,
+                                                    debug=debug,
+                                                    max_iter=max_iter,
+                                                    optimizer=optimizer
                                                     )
 test_data = {
     "lkhFIN": lkhFIN,

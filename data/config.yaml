@@ -1,0 +1,9 @@
+stay: [0.5, 0.5, 0.5]
+params: [10.0, 5.0, 1.0, -0.1, 0.1]
+filepath: 'data/simulationTest3phase.mat'
+sampling_interval: 1
+n_iteration: 100
+tolerance: 0.01
+debug: false
+max_iter: 1000000
+optimizer: 'BFGS'
